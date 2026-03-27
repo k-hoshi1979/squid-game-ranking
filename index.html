@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE SQUID GAME - RESPONSIVE RANKING</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+    <style>
+        /* --- デザインベース --- */
+        body {
+            margin: 0; padding: 0; 
+            background-image: url('画像/Piggy-Bank.jpg'); 
+            background-size: cover; background-position: center; background-attachment: fixed;
+            background-color: #000; color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', sans-serif;
+            overflow: hidden; height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1s; opacity: 1;
+        }
+
+        body::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); z-index: -1;
+        }
+
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #start-btn {
+            padding: 15px 40px; font-size: 1.5rem; background: #ff00de; color: white;
+            border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 0 20px #ff00de;
+        }
+
+        h2 {
+            text-align: center; font-size: calc(1.8rem + 1.5vw); color: #fff;
+            text-shadow: 0 0 10px #ff00de, 0 0 20px #ff00de;
+            margin: 10px 0; letter-spacing: 3px; z-index: 10;
+        }
+
+        /* --- ランキングコンテナ（レスポンシブル） --- */
+        #ranking-container {
+            width: 95%; /* 横幅は画面の95% */
+            max-width: 900px;
+            height: 70vh; /* 縦幅は画面の70% */
+            overflow: hidden; position: relative;
+            border: 3px solid #3ecf8e; border-radius: 15px;
+            box-shadow: 0 0 25px rgba(62, 207, 142, 0.5);
+            background: rgba(0, 10, 0, 0.7); 
+        }
+
+        #ranking-body {
+            list-style: none; padding: 0; margin: 0;
+            position: absolute; width: 100%; top: 0;
+            will-change: transform;
+        }
+
+        /* 各行の基本スタイル */
+        .ranking-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 5%; border-bottom: 1px solid rgba(62, 207, 142, 0.3);
+            font-size: 1.6rem; height: 80px; box-sizing: border-box;
+            transition: all 0.6s ease;
+        }
+
+        /* 順位別の高さとサイズ調整 */
+        .item-1 { font-size: 2.2rem; height: 110px; color: #ffeb3b; background: rgba(255,235,59,0.2); }
+        .item-2 { font-size: 1.9rem; height: 90px; color: #e0e0e0; }
+        .item-3 { font-size: 1.7rem; height: 85px; color: #cd7f32; }
+        .item-low { color: #3ecf8e; font-size: 1.3rem; }
+
+        /* レイアウトの微調整 */
+        .rank { font-weight: bold; flex-shrink: 0; margin-right: 15px; min-width: 60px; }
+        .name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .win-count { flex-shrink: 0; text-align: right; font-weight: bold; color: #ffeb3b; margin-left: 10px; }
+
+        /* 雷光エフェクト */
+        @keyframes pulseThunder {
+            0%, 100% { box-shadow: 0 0 15px -5px inherit; }
+            50% { box-shadow: 0 0 35px 5px inherit; }
+        }
+        .active-effect { border-width: 2px; border-style: solid; animation: pulseThunder 1.5s infinite; }
+
+        /* --- 📱 スマホ用調整 (画面幅が600px以下の時) --- */
+        @media screen and (max-width: 600px) {
+            h2 { font-size: 1.8rem; margin: 5px 0; }
+            .ranking-item { height: 65px; font-size: 1.1rem; padding: 0 15px; }
+            .item-1 { font-size: 1.5rem; height: 90px; }
+            .item-2 { font-size: 1.3rem; height: 75px; }
+            .item-3 { font-size: 1.2rem; height: 70px; }
+            .item-low { font-size: 1.0rem; }
+            .rank { min-width: 45px; }
+            #start-btn { padding: 12px 30px; font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body id="main-body">
+
+    <div id="overlay"><button id="start-btn">START SQUID GAME</button></div>
+    <audio id="bgm" loop><source src="BGM/Mainetheme.mp3"type="audio/mpeg"></audio>
+
+    <h2>SQUID GAME RANKING</h2>
+
+    <div id="ranking-container">
+        <ul id="ranking-body">
+            </ul>
+    </div>
+
+    <script>
+        // --- 設定エリア (あなたの情報を入れてください) ---
+        const SB_URL = 'https://wdlakjpidubkiiwhzigq.supabase.co'; 
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkbGFranBpZHVia2lpd2h6aWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MTU3ODMsImV4cCI6MjA4OTQ5MTc4M30.WxPL0GUR0UEETnwkz-s-z5cEVK_LjdhKhLEpDmnU_Ow';
+        // --------------------------------------------------
+
+        const client = supabase.createClient(SB_URL, SB_KEY);
+        const bgm = document.getElementById('bgm');
+        const SCROLL_TIME = 10; 
+        const WAIT_TIME = 24;
+
+        document.getElementById('start-btn').onclick = () => {
+            document.getElementById('overlay').style.display = 'none';
+            bgm.play();
+            init();
+        };
+
+        async function init() {
+            try {
+                bgm.currentTime = 0;
+                document.getElementById('main-body').style.opacity = 1;
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+                const { data, error } = await client.from('game_entries').select('*').gte('created_at', firstDay);
+                if (error) throw error;
+
+                const stats = data.reduce((acc, cur) => {
+                    if (!acc[cur.email]) acc[cur.email] = { name: cur.nickname, count: 0, last: cur.created_at };
+                    if (new Date(cur.created_at) > new Date(acc[cur.email].last)) {
+                        acc[cur.email].name = cur.nickname;
+                        acc[cur.email].last = cur.created_at;
+                    }
+                    acc[cur.email].count++;
+                    return acc;
+                }, {});
+
+                const sorted = Object.values(stats).sort((a, b) => b.count - a.count);
+                const listEl = document.getElementById('ranking-body');
+                
+                listEl.innerHTML = sorted.map((d, i) => {
+                    const rank = i + 1;
+                    const rClass = (rank <= 3) ? `item-${rank}` : "item-low";
+                    return `<li id="rank-item-${rank}" class="ranking-item ${rClass}">
+                        <span class="rank">${rank}位</span>
+                        <span class="name">${d.name}</span>
+                        <span class="win-count">${d.count} WIN</span>
+                    </li>`;
+                }).join('');
+
+                // 高さを計算（スマホとPCで高さが変わるため動的に取得）
+                const itemEl = listEl.querySelector('.ranking-item');
+                const rowHeight = itemEl ? itemEl.offsetHeight : 80;
+                const startOffset = Math.max(0, listEl.scrollHeight - rowHeight);
+
+                listEl.style.transition = "none";
+                listEl.style.transform = `translateY(-${startOffset}px)`;
+
+                setTimeout(() => {
+                    listEl.style.transition = `transform ${SCROLL_TIME}s cubic-bezier(0.4, 0, 0.2, 1)`;
+                    listEl.style.transform = "translateY(0)";
+
+                    setTimeout(() => {
+                        for(let r=1; r<=3; r++){
+                            const el = document.getElementById(`rank-item-${r}`);
+                            if(el) {
+                                el.style.borderColor = (r===1) ? '#ffeb3b' : (r===2) ? '#e0e0e0' : '#cd7f32';
+                                el.classList.add('active-effect');
+                            }
+                        }
+                        setTimeout(() => {
+                            document.getElementById('main-body').style.opacity = 0;
+                            setTimeout(init, 1000);
+                        }, WAIT_TIME * 1000);
+                    }, SCROLL_TIME * 1000);
+                }, 800);
+
+            } catch (err) { console.error(err); }
+        }
+    </script>
+</body>
+</html>
