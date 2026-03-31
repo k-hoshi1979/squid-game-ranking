@@ -3,190 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE SQUID GAME - RESPONSIVE RANKING</title>
+    <title>SQUID GAME - 35s PERFECT LOOP</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
     <style>
-        /* --- デザインベース --- */
         body {
-            margin: 0; padding: 0; 
-            background-image: url('画像/Piggy-Bank.jpg'); 
-            background-size: cover; background-position: center; background-attachment: fixed;
-            background-color: #000; color: #fff;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', sans-serif;
-            overflow: hidden; height: 100vh;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: opacity 1s; opacity: 1;
+            margin: 0; padding: 0; background-color: #000; color: #fff;
+            background-image: url('画像/Piggy-Bank.jpg'); background-size: cover; background-position: center;
+            font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh;
         }
+        body::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
 
-        body::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.4); z-index: -1;
+        /* --- 1. ロゴ（0-5秒に延長） --- */
+        #logo-layer {
+            position: fixed; inset: 0; background: #fff; z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            opacity: 0;
         }
+        #logo-layer img { max-width: 80%; height: auto; }
 
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 2000;
+        /* --- 2. テロップ（5-15秒） --- */
+        #telop-layer {
+            position: fixed; inset: 0; z-index: 90;
+            display: none; justify-content: center; align-items: center;
+        }
+        .telop-container {
+            position: relative; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
         }
-        #start-btn {
-            padding: 15px 40px; font-size: 1.5rem; background: #ff00de; color: white;
-            border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
-            box-shadow: 0 0 20px #ff00de;
+        .telop {
+            position: absolute; width: 100%; text-align: center;
+            font-size: calc(2.2rem + 2vw); font-weight: 900; opacity: 0;
+            color: #fff; text-shadow: 0 0 20px #ff00de, 0 0 40px #ff00de, 2px 2px 5px #000;
+            letter-spacing: 0.2em; pointer-events: none;
         }
 
-        h2 {
-            text-align: center; font-size: calc(1.8rem + 1.5vw); color: #fff;
-            text-shadow: 0 0 10px #ff00de, 0 0 20px #ff00de;
-            margin: 10px 0; letter-spacing: 3px; z-index: 10;
+        /* --- 3. ランキング（15-35秒） --- */
+        #ranking-layer {
+            position: relative; z-index: 80; opacity: 0;
+            display: none; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
+        }
+        h2 { font-size: 3rem; margin-bottom: 15px; color: #ff00de; text-shadow: 0 0 10px #ff00de; }
+        #list-window {
+            width: 90%; max-width: 800px; height: 70vh;
+            border: 4px solid #3ecf8e; border-radius: 20px; overflow: hidden;
+            background: rgba(0, 20, 0, 0.9); position: relative;
+        }
+        #ranking-list {
+            list-style: none; padding: 0; margin: 0; width: 100%;
+            position: absolute; top: 0; transform: translateY(85vh);
         }
 
-        /* --- ランキングコンテナ（レスポンシブル） --- */
-        #ranking-container {
-            width: 95%; /* 横幅は画面の95% */
-            max-width: 900px;
-            height: 70vh; /* 縦幅は画面の70% */
-            overflow: hidden; position: relative;
-            border: 3px solid #3ecf8e; border-radius: 15px;
-            box-shadow: 0 0 25px rgba(62, 207, 142, 0.5);
-            background: rgba(0, 10, 0, 0.7); 
+        /* --- アニメーション設定 --- */
+        .play-logo { display: flex !important; animation: logoFade 5s forwards; } /* 5秒に延長 */
+        .play-ranking { display: flex !important; animation: fadeIn 1s forwards; }
+        .play-scroll { animation: scrollUp 10s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+        @keyframes logoFade { 0% { opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .t-active { animation: telopShow 3.3s forwards; } /* テロップ間隔も微調整 */
+        @keyframes telopShow {
+            0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+            15%, 85% { opacity: 1; transform: scale(1) translateY(0); }
+            100% { opacity: 0; transform: scale(1.1) translateY(-10px); }
         }
 
-        #ranking-body {
-            list-style: none; padding: 0; margin: 0;
-            position: absolute; width: 100%; top: 0;
-            will-change: transform;
+        @keyframes scrollUp {
+            0% { transform: translateY(80vh); }
+            100% { transform: translateY(0); }
         }
 
-        /* 各行の基本スタイル */
-        .ranking-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 5%; border-bottom: 1px solid rgba(62, 207, 142, 0.3);
-            font-size: 1.6rem; height: 80px; box-sizing: border-box;
-            transition: all 0.6s ease;
-        }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 0 40px; height: 80px; border-bottom: 1px solid rgba(62, 207, 142, 0.3); font-size: 1.8rem; box-sizing: border-box; }
+        .rank-1 { height: 120px; font-size: 2.5rem; color: #ffeb3b; background: rgba(255,235,59,0.1); }
+        .rank-2 { height: 100px; font-size: 2.2rem; color: #e0e0e0; }
+        .rank-3 { height: 90px; font-size: 2rem; color: #cd7f32; }
+        .win { font-weight: bold; color: #ffeb3b; }
 
-        /* 順位別の高さとサイズ調整 */
-        .item-1 { font-size: 2.2rem; height: 110px; color: #ffeb3b; background: rgba(255,235,59,0.2); }
-        .item-2 { font-size: 1.9rem; height: 90px; color: #e0e0e0; }
-        .item-3 { font-size: 1.7rem; height: 85px; color: #cd7f32; }
-        .item-low { color: #3ecf8e; font-size: 1.3rem; }
-
-        /* レイアウトの微調整 */
-        .rank { font-weight: bold; flex-shrink: 0; margin-right: 15px; min-width: 60px; }
-        .name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .win-count { flex-shrink: 0; text-align: right; font-weight: bold; color: #ffeb3b; margin-left: 10px; }
-
-        /* 雷光エフェクト */
-        @keyframes pulseThunder {
-            0%, 100% { box-shadow: 0 0 15px -5px inherit; }
-            50% { box-shadow: 0 0 35px 5px inherit; }
-        }
-        .active-effect { border-width: 2px; border-style: solid; animation: pulseThunder 1.5s infinite; }
-
-        /* --- 📱 スマホ用調整 (画面幅が600px以下の時) --- */
-        @media screen and (max-width: 600px) {
-            h2 { font-size: 1.8rem; margin: 5px 0; }
-            .ranking-item { height: 65px; font-size: 1.1rem; padding: 0 15px; }
-            .item-1 { font-size: 1.5rem; height: 90px; }
-            .item-2 { font-size: 1.3rem; height: 75px; }
-            .item-3 { font-size: 1.2rem; height: 70px; }
-            .item-low { font-size: 1.0rem; }
-            .rank { min-width: 45px; }
-            #start-btn { padding: 12px 30px; font-size: 1.2rem; }
-        }
+        #start-mask { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        button { padding: 20px 60px; font-size: 2rem; background: #ff00de; color: #fff; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
-<body id="main-body">
+<body>
 
-    <div id="overlay"><button id="start-btn">START SQUID GAME</button></div>
-    <audio id="bgm" loop><source src="BGM/Mainetheme.mp3"type="audio/mpeg"></audio>
+    <div id="start-mask"><button id="start-btn">START SHOW</button></div>
+    <audio id="bgm"><source src="BGM/Mainetheme.mp3" type="audio/mpeg"></audio>
 
-    <h2>SQUID GAME RANKING</h2>
+    <div id="logo-layer"><img src="画像/VVIPロゴ.png" alt="Logo"></div>
 
-    <div id="ranking-container">
-        <ul id="ranking-body">
-            </ul>
+    <div id="telop-layer">
+        <div class="telop-container">
+            <div id="t1" class="telop">真のTop of topを決める！</div>
+            <div id="t2" class="telop">チャンピオンシップ開幕！</div>
+            <div id="t3" class="telop">VVIPは誰の手に？</div>
+        </div>
+    </div>
+
+    <div id="ranking-layer">
+        <h2>SQUID GAME RANKING</h2>
+        <div id="list-window">
+            <ul id="ranking-list"></ul>
+        </div>
     </div>
 
     <script>
-        // --- 設定エリア (あなたの情報を入れてください) ---
         const SB_URL = 'https://wdlakjpidubkiiwhzigq.supabase.co'; 
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkbGFranBpZHVia2lpd2h6aWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MTU3ODMsImV4cCI6MjA4OTQ5MTc4M30.WxPL0GUR0UEETnwkz-s-z5cEVK_LjdhKhLEpDmnU_Ow';
-        // --------------------------------------------------
-
         const client = supabase.createClient(SB_URL, SB_KEY);
         const bgm = document.getElementById('bgm');
-        const SCROLL_TIME = 10; 
-        const WAIT_TIME = 24;
+
+        async function runShowCycle() {
+            // 状態リセット
+            const logoLayer = document.getElementById('logo-layer');
+            const telopLayer = document.getElementById('telop-layer');
+            const rankingLayer = document.getElementById('ranking-layer');
+            const listEl = document.getElementById('ranking-list');
+
+            logoLayer.classList.remove('play-logo');
+            rankingLayer.classList.remove('play-ranking');
+            listEl.classList.remove('play-scroll');
+            document.querySelectorAll('.telop').forEach(t => t.classList.remove('t-active'));
+            
+            logoLayer.style.display = 'none';
+            telopLayer.style.display = 'none';
+            rankingLayer.style.display = 'none';
+
+            // 最新データ取得
+            const { data } = await client.from('game_entries').select('*').gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
+            const stats = data.reduce((acc, cur) => {
+                const key = `${cur.nickname.trim()}_${cur.email.trim()}`;
+                if (!acc[key]) acc[key] = { name: cur.nickname, count: 0 };
+                acc[key].count++; return acc;
+            }, {});
+            const sorted = Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 10);
+            listEl.innerHTML = sorted.map((d, i) => `<li class="item rank-${i+1}"><span>${i+1}位 ${d.name}</span><span class="win">${d.count} WIN</span></li>`).join('');
+
+            // BGMリスタート（ループの頭で再生）
+            bgm.currentTime = 0;
+            bgm.play();
+
+            // 1. ロゴ表示 (0s - 5s)
+            setTimeout(() => {
+                logoLayer.classList.add('play-logo');
+            }, 100);
+
+            // 2. テロップ表示 (5s - 15s)
+            setTimeout(() => {
+                logoLayer.style.display = 'none';
+                telopLayer.style.display = 'flex';
+                document.getElementById('t1').classList.add('t-active');
+                setTimeout(() => document.getElementById('t2').classList.add('t-active'), 3300);
+                setTimeout(() => document.getElementById('t3').classList.add('t-active'), 6600);
+            }, 5000);
+
+            // 3. ランキング表示 (15s - 35s)
+            setTimeout(() => {
+                telopLayer.style.display = 'none';
+                rankingLayer.classList.add('play-ranking');
+                setTimeout(() => {
+                    listEl.classList.add('play-scroll');
+                }, 100);
+            }, 15000);
+
+            // 4. 無限ループ (35秒ちょうど)
+            setTimeout(() => {
+                runShowCycle();
+            }, 35000);
+        }
 
         document.getElementById('start-btn').onclick = () => {
-            document.getElementById('overlay').style.display = 'none';
-            bgm.play();
-            init();
+            document.getElementById('start-mask').style.display = 'none';
+            runShowCycle();
         };
-
-        async function init() {
-            try {
-                bgm.currentTime = 0;
-                document.getElementById('main-body').style.opacity = 1;
-                const now = new Date();
-                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-                const { data, error } = await client.from('game_entries').select('*').gte('created_at', firstDay);
-                if (error) throw error;
-
-                const stats = data.reduce((acc, cur) => {
-                    if (!acc[cur.email]) acc[cur.email] = { name: cur.nickname, count: 0, last: cur.created_at };
-                    if (new Date(cur.created_at) > new Date(acc[cur.email].last)) {
-                        acc[cur.email].name = cur.nickname;
-                        acc[cur.email].last = cur.created_at;
-                    }
-                    acc[cur.email].count++;
-                    return acc;
-                }, {});
-
-                const sorted = Object.values(stats).sort((a, b) => b.count - a.count);
-                const listEl = document.getElementById('ranking-body');
-                
-                listEl.innerHTML = sorted.map((d, i) => {
-                    const rank = i + 1;
-                    const rClass = (rank <= 3) ? `item-${rank}` : "item-low";
-                    return `<li id="rank-item-${rank}" class="ranking-item ${rClass}">
-                        <span class="rank">${rank}位</span>
-                        <span class="name">${d.name}</span>
-                        <span class="win-count">${d.count} WIN</span>
-                    </li>`;
-                }).join('');
-
-                // 高さを計算（スマホとPCで高さが変わるため動的に取得）
-                const itemEl = listEl.querySelector('.ranking-item');
-                const rowHeight = itemEl ? itemEl.offsetHeight : 80;
-                const startOffset = Math.max(0, listEl.scrollHeight - rowHeight);
-
-                listEl.style.transition = "none";
-                listEl.style.transform = `translateY(-${startOffset}px)`;
-
-                setTimeout(() => {
-                    listEl.style.transition = `transform ${SCROLL_TIME}s cubic-bezier(0.4, 0, 0.2, 1)`;
-                    listEl.style.transform = "translateY(0)";
-
-                    setTimeout(() => {
-                        for(let r=1; r<=3; r++){
-                            const el = document.getElementById(`rank-item-${r}`);
-                            if(el) {
-                                el.style.borderColor = (r===1) ? '#ffeb3b' : (r===2) ? '#e0e0e0' : '#cd7f32';
-                                el.classList.add('active-effect');
-                            }
-                        }
-                        setTimeout(() => {
-                            document.getElementById('main-body').style.opacity = 0;
-                            setTimeout(init, 1000);
-                        }, WAIT_TIME * 1000);
-                    }, SCROLL_TIME * 1000);
-                }, 800);
-
-            } catch (err) { console.error(err); }
-        }
     </script>
 </body>
 </html>
