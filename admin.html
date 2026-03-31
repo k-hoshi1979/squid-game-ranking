@@ -2,46 +2,33 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>SQUID GAME - SECURE ADMIN</title>
+    <title>SQUID GAME - SECURE ADMIN (ID Ver.)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
     <style>
-        /* 以前のスタイルを継承 + アルファ */
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: none; /* 初期は非表示 */ }
-        h1 { color: #ff00de; border-left: 5px solid #ff00de; padding-left: 15px; margin-bottom: 30px; }
-        section { margin-bottom: 40px; padding: 20px; border: 1px solid #eee; border-radius: 8px; position: relative; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 10px; }
-        input { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; display: none; }
+        h1 { color: #ff00de; border-left: 5px solid #ff00de; padding-left: 15px; }
+        section { margin-bottom: 30px; padding: 20px; border: 1px solid #eee; border-radius: 8px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 6px; }
         button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; }
-        
-        .btn-add { background: #3ecf8e; color: white; }
-        .btn-csv { background: #007bff; color: white; margin-left: 10px; }
+        .btn-add { background: #3ecf8e; color: white; width: 100%; }
         .btn-clear { background: #ff4d4d; color: white; float: right; font-size: 0.8rem; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border-bottom: 1px solid #eee; padding: 15px; text-align: left; }
         .user-row { cursor: pointer; }
-        .user-row:hover { background: #f1f1f1; }
+        .user-row:hover { background: #f9f9f9; }
         .details-row { display: none; background: #fafafa; }
-        .win-badge { background: #ffeb3b; color: #000; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
-        .btn-del { background: #ff4d4d; color: white; padding: 5px 10px; font-size: 12px; }
-
-        /* ログイン画面のスタイル */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 3000;
-        }
-        #login-screen h2 { color: #ff00de; margin-bottom: 20px; }
-        #login-screen input { width: 250px; margin-bottom: 15px; text-align: center; }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 3000; }
+        #login-screen h2 { color: #ff00de; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
     <h2>ADMIN ACCESS</h2>
-    <input type="password" id="access-pass" placeholder="ENTER PASSWORD">
-    <button class="btn-add" onclick="checkAccess()">LOGIN</button>
+    <input type="password" id="access-pass" placeholder="PASSWORD">
+    <button onclick="checkAccess()" style="background:#3ecf8e; color:white; margin-top:10px;">LOGIN</button>
 </div>
 
 <div class="container" id="admin-content">
@@ -50,34 +37,19 @@
     <section>
         <h3>新規エントリー登録</h3>
         <div class="form-row">
-            <input type="text" id="new_game_id" placeholder="公演ID">
+            <input type="text" id="new_game_id" placeholder="ゲームID(公演用)">
             <input type="text" id="new_nickname" placeholder="ニックネーム">
-            <input type="email" id="new_email" placeholder="メールアドレス">
+            <input type="text" id="new_player_id" placeholder="4桁の数字(個人識別用)" maxlength="4">
             <button class="btn-add" id="add-btn">登録</button>
         </div>
     </section>
 
     <section>
-        <h3>
-            登録データ管理
-            <div>
-                <button class="btn-csv" id="csv-btn">CSVダウンロード</button>
-                <button class="btn-clear" onclick="allClear()">⚠️全データ消去</button>
-            </div>
-        </h3>
-        
-        <div style="display:flex; gap:10px; margin-bottom:20px; background:#f9f9f9; padding:15px; border-radius:8px;">
-            <input type="text" id="search_input" style="flex-grow:1;" placeholder="メール または 公演ID で検索...">
-            <button onclick="renderTable()">検索</button>
-        </div>
-
-        <table id="main-table">
+        <h3>登録データ管理 <button class="btn-clear" onclick="allClear()">⚠️全データ消去</button></h3>
+        <input type="text" id="search_input" placeholder="名前 または 4桁数字 で検索..." oninput="renderTable()" style="width:100%; box-sizing:border-box; margin-bottom:15px;">
+        <table>
             <thead>
-                <tr>
-                    <th>アカウント (メール)</th>
-                    <th>最新名</th>
-                    <th>WIN数</th>
-                </tr>
+                <tr><th>アカウント</th><th>WIN数</th><th>操作</th></tr>
             </thead>
             <tbody id="user-list-body"></tbody>
         </table>
@@ -87,28 +59,21 @@
 <script>
     const SB_URL = 'https://wdlakjpidubkiiwhzigq.supabase.co'; 
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkbGFranBpZHVia2lpd2h6aWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MTU3ODMsImV4cCI6MjA4OTQ5MTc4M30.WxPL0GUR0UEETnwkz-s-z5cEVK_LjdhKhLEpDmnU_Ow';
-    const ADMIN_PASS = "shibuya0116"; // 設定されたパスワード
-    
+    const ADMIN_PASS = "shibuya0116";
     const client = supabase.createClient(SB_URL, SB_KEY);
     let allRawData = [];
 
-    // パスワードチェック
     function checkAccess() {
-        const input = document.getElementById('access-pass').value;
-        if (input === ADMIN_PASS) {
+        if (document.getElementById('access-pass').value === ADMIN_PASS) {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('admin-content').style.display = 'block';
             loadData();
-        } else {
-            alert("パスワードが正しくありません。");
-        }
+        } else alert("Wrong password");
     }
 
     async function loadData() {
         const { data, error } = await client.from('game_entries').select('*').order('created_at', { ascending: false });
-        if (error) return;
-        allRawData = data;
-        renderTable();
+        if (!error) { allRawData = data; renderTable(); }
     }
 
     function renderTable() {
@@ -116,94 +81,58 @@
         const tbody = document.getElementById('user-list-body');
         tbody.innerHTML = "";
 
-        const filtered = allRawData.filter(item => 
-            item.email.toLowerCase().includes(searchText) || item.game_id.toLowerCase().includes(searchText)
-        );
-
-        const stats = filtered.reduce((acc, cur) => {
-            if (!acc[cur.email]) acc[cur.email] = { name: cur.nickname, count: 0, entries: [], last: cur.created_at };
-            if (new Date(cur.created_at) > new Date(acc[cur.email].last)) {
-                acc[cur.email].name = cur.nickname;
-                acc[cur.email].last = cur.created_at;
-            }
-            acc[cur.email].count++;
-            acc[cur.email].entries.push(cur);
+        const stats = allRawData.reduce((acc, cur) => {
+            const userKey = `${cur.nickname}_${cur.email}`;
+            if (!acc[userKey]) acc[userKey] = { name: cur.nickname, pin: cur.email, count: 0, entries: [] };
+            acc[userKey].count++;
+            acc[userKey].entries.push(cur);
             return acc;
         }, {});
 
-        Object.keys(stats).forEach((email, i) => {
-            const user = stats[email];
+        Object.keys(stats).filter(k => k.toLowerCase().includes(searchText)).forEach((key, i) => {
+            const user = stats[key];
             const row = document.createElement('tr');
             row.className = "user-row";
             row.onclick = () => {
                 const el = document.getElementById(`details-${i}`);
                 el.style.display = (el.style.display === 'table-row') ? 'none' : 'table-row';
             };
-            row.innerHTML = `<td>${email}</td><td>${user.name}</td><td><span class="win-badge">${user.count}</span></td>`;
+            row.innerHTML = `<td>${user.name} (${user.pin})</td><td><b>${user.count}</b></td><td>詳細▼</td>`;
             
             const detailRow = document.createElement('tr');
             detailRow.id = `details-${i}`;
             detailRow.className = "details-row";
-            let entryHtml = user.entries.map(e => `
-                <div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #ddd;">
-                    <span>ID: ${e.game_id} | ${e.nickname} (${new Date(e.created_at).toLocaleDateString()})</span>
-                    <button class="btn-del" onclick="deleteEntry('${e.id}')">削除</button>
-                </div>
-            `).join('');
-            detailRow.innerHTML = `<td colspan="3" style="padding:10px 30px;">${entryHtml}</td>`;
-            
+            detailRow.innerHTML = `<td colspan="3">${user.entries.map(e => `
+                <div style="padding:5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                    <span>${new Date(e.created_at).toLocaleTimeString()} | 🆔:${e.game_id}</span>
+                    <button onclick="deleteEntry('${e.id}')" style="background:#ff4d4d; color:white; border:none; cursor:pointer;">削除</button>
+                </div>`).join('')}</td>`;
             tbody.appendChild(row);
             tbody.appendChild(detailRow);
         });
     }
 
-    // 全データ削除機能
+    document.getElementById('add-btn').onclick = async () => {
+        const payload = {
+            nickname: document.getElementById('new_nickname').value.trim(),
+            email: document.getElementById('new_player_id').value.trim(), // 4桁IDをemail列に転用
+            game_id: document.getElementById('new_game_id').value.trim()
+        };
+        if(!payload.nickname || !payload.email || !payload.game_id) return alert("入力不足");
+        const { error } = await client.from('game_entries').insert([payload]);
+        if(!error) { alert("登録完了"); loadData(); }
+    };
+
+    async function deleteEntry(id) {
+        if(confirm("削除しますか？")) { await client.from('game_entries').delete().eq('id', id); loadData(); }
+    }
+
     async function allClear() {
-        const confirm1 = confirm("⚠️警告：本当に全てのデータを完全に消去しますか？\nこの操作は取り消せません。");
-        if (!confirm1) return;
-
-        const secondPass = prompt("確認のため、再度ログインパスワードを入力してください：");
-        if (secondPass !== ADMIN_PASS) {
-            alert("パスワードが一致しません。削除を中止しました。");
-            return;
-        }
-
-        const confirm2 = confirm("本当の本当によろしいですね？全データが消えます。");
-        if (!confirm2) return;
-
-        // 全件削除の実行（IDがnullでないものを全て削除 = 全削除）
-        const { error } = await client.from('game_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        
-        if (error) {
-            alert("エラーが発生しました: " + error.message);
-        } else {
-            alert("全てのデータを消去しました。ランキングはリセットされます。");
+        if(confirm("全消去しますか？") && prompt("PASS?") === ADMIN_PASS) {
+            await client.from('game_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000');
             location.reload();
         }
     }
-
-    // 単一削除・CSV・新規登録などは以前のロジックを継続（省略せず組み込み済み）
-    async function deleteEntry(id) {
-        if(!confirm("削除しますか？")) return;
-        await client.from('game_entries').delete().eq('id', id);
-        loadData();
-    }
-
-    document.getElementById('csv-btn').onclick = () => {
-        let csv = "\uFEFF日時,名,メアド,ID\n";
-        allRawData.forEach(r => csv += `${new Date(r.created_at).toLocaleString()},${r.nickname},${r.email},${r.game_id}\n`);
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "data.csv";
-        a.click();
-    };
-
-    document.getElementById('add-btn').onclick = async () => {
-        const p = { nickname: document.getElementById('new_nickname').value, email: document.getElementById('new_email').value, game_id: document.getElementById('new_game_id').value };
-        const { error } = await client.from('game_entries').insert([p]);
-        if(error) alert(error.message); else location.reload();
-    };
 </script>
 </body>
 </html>
