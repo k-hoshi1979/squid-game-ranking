@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VVIP CHAMPIONSHIP - TOP 100 ARCHIVE</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
+    <style>
+        :root {
+            --gold: #ffeb3b; --silver: #e0e0e0; --bronze: #cd7f32;
+            --squid-pink: #ff00de; --squid-green: #3ecf8e;
+        }
+        body {
+            margin: 0; padding: 40px 20px; background-color: #0b0b0b; color: #fff;
+            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', sans-serif;
+            background-image: radial-gradient(circle, #222 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 60px; }
+        header h1 { 
+            font-size: 3rem; letter-spacing: 10px; color: var(--squid-pink);
+            text-shadow: 0 0 20px var(--squid-pink); margin: 0;
+        }
+        header p { color: #888; letter-spacing: 2px; margin-top: 10px; }
+
+        /* --- TOP 3 (THE LEGENDS) --- */
+        .top3-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px; margin-bottom: 60px; align-items: end;
+        }
+        .podium-card {
+            background: rgba(255, 255, 255, 0.05); border-radius: 20px;
+            padding: 40px 20px; text-align: center; position: relative;
+            border: 2px solid transparent; transition: 0.3s;
+        }
+        .podium-card:hover { transform: translateY(-10px); background: rgba(255, 255, 255, 0.1); }
+        
+        .rank-number { font-size: 5rem; font-weight: 900; line-height: 1; margin-bottom: 10px; }
+        .player-name { font-size: 1.8rem; font-weight: bold; margin-bottom: 5px; }
+        .win-badge { display: inline-block; padding: 5px 20px; border-radius: 50px; background: #000; font-weight: bold; }
+
+        /* 順位別装飾 */
+        .rank-1 { order: 2; border-color: var(--gold); box-shadow: 0 0 30px rgba(255, 235, 59, 0.3); padding: 60px 20px; }
+        .rank-1 .rank-number { color: var(--gold); text-shadow: 0 0 20px var(--gold); }
+        .rank-2 { order: 1; border-color: var(--silver); }
+        .rank-2 .rank-number { color: var(--silver); }
+        .rank-3 { order: 3; border-color: var(--bronze); }
+        .rank-3 .rank-number { color: var(--bronze); }
+
+        /* --- 4-10 (THE ELITES) --- */
+        .elites-section { margin-bottom: 60px; }
+        .section-title { 
+            border-bottom: 2px solid var(--squid-green); display: inline-block; 
+            padding-right: 50px; margin-bottom: 20px; font-size: 1.2rem; color: var(--squid-green);
+        }
+        .elites-list {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        }
+        .elite-item {
+            background: rgba(62, 207, 142, 0.1); border-left: 5px solid var(--squid-green);
+            padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .elite-name { font-weight: bold; font-size: 1.1rem; }
+
+        /* --- 11-100 (THE CHALLENGERS) --- */
+        .challengers-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 5px; border-top: 1px solid #333; padding-top: 20px;
+        }
+        .challenger-item {
+            font-size: 0.9rem; padding: 8px 15px; background: #1a1a1a;
+            display: flex; justify-content: space-between; color: #aaa;
+        }
+        .challenger-item:hover { background: #333; color: #fff; }
+
+        @media (max-width: 768px) {
+            .top3-grid { grid-template-columns: 1fr; }
+            .rank-1 { order: 1; } .rank-2 { order: 2; } .rank-3 { order: 3; }
+            .elites-list { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>TOP 100 LEADERS</h1>
+        <p>VVIP CHAMPIONSHIP ARCHIVE</p>
+    </header>
+
+    <div id="top3-container" class="top3-grid">
+        </div>
+
+    <div class="elites-section">
+        <div class="section-title">TOP 10 ELITES</div>
+        <div id="elites-container" class="elites-list">
+            </div>
+    </div>
+
+    <div class="challengers-section">
+        <div class="section-title">THE CHALLENGERS</div>
+        <div id="challengers-container" class="challengers-grid">
+            </div>
+    </div>
+</div>
+
+<script>
+        const SB_URL = 'https://wdlakjpidubkiiwhzigq.supabase.co'; 
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkbGFranBpZHVia2lpd2h6aWdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MTU3ODMsImV4cCI6MjA4OTQ5MTc4M30.WxPL0GUR0UEETnwkz-s-z5cEVK_LjdhKhLEpDmnU_Ow';
+    const client = supabase.createClient(SB_URL, SB_KEY);
+
+    async function loadLeaderboard() {
+        // 全データ取得
+        const { data, error } = await client.from('game_entries').select('*');
+        if (error) return console.error(error);
+
+        // 集計（名前+4桁IDをキーにする）
+        const stats = data.reduce((acc, cur) => {
+            const key = `${cur.nickname.trim()}_${cur.email.trim()}`;
+            if (!acc[key]) acc[key] = { name: cur.nickname, count: 0 };
+            acc[key].count++; return acc;
+        }, {});
+
+        const sorted = Object.values(stats).sort((a, b) => b.count - a.count);
+
+        // 1-3位の描画
+        const top3Container = document.getElementById('top3-container');
+        top3Container.innerHTML = sorted.slice(0, 3).map((d, i) => `
+            <div class="podium-card rank-${i+1}">
+                <div class="rank-number">${i+1}</div>
+                <div class="player-name">${d.name}</div>
+                <div class="win-badge">${d.count} WIN</div>
+            </div>
+        `).join('');
+
+        // 4-10位の描画
+        const elitesContainer = document.getElementById('elites-container');
+        elitesContainer.innerHTML = sorted.slice(3, 10).map((d, i) => `
+            <div class="elite-item">
+                <span class="elite-name">${i+4}. ${d.name}</span>
+                <span style="color:var(--squid-green)">${d.count} WIN</span>
+            </div>
+        `).join('');
+
+        // 11-100位の描画
+        const challengersContainer = document.getElementById('challengers-container');
+        challengersContainer.innerHTML = sorted.slice(10, 100).map((d, i) => `
+            <div class="challenger-item">
+                <span>${i+11}. ${d.name}</span>
+                <span>${d.count} W</span>
+            </div>
+        `).join('');
+    }
+
+    loadLeaderboard();
+</script>
+</body>
+</html>
